@@ -20,102 +20,110 @@ export default function OfferCard({
   showActions = true,
 }: OfferCardProps) {
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
-      {/* Image */}
-      <Link href={`/oferta/${offer.id}`}>
-        <div className="relative h-64 w-full overflow-hidden">
-          <Image
-            src={offer.image_url}
-            alt={offer.title}
-            fill
-            className="object-cover hover:scale-105 transition-transform duration-300"
-          />
-        </div>
-      </Link>
-
-      {/* Content */}
-      <div className="p-4">
-        {/* Title */}
-        <Link href={`/oferta/${offer.id}`}>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2 hover:text-orange-600 transition line-clamp-2">
-            {offer.title}
-          </h3>
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
+      <div className="flex flex-col sm:flex-row">
+        {/* Image */}
+        <Link href={`/oferta/${offer.id}`} className="sm:w-48 sm:flex-shrink-0">
+          <div className="relative h-48 sm:h-full w-full overflow-hidden bg-gray-100 dark:bg-gray-700">
+            <Image
+              src={offer.image_url}
+              alt={offer.title}
+              fill
+              className="object-cover hover:scale-105 transition-transform duration-300"
+            />
+          </div>
         </Link>
 
-        {/* Price */}
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-2xl font-bold text-orange-600">
-            {formatPrice(offer.price)}
-          </span>
-          {offer.source === 'scraper' && (
-            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-              Auto
-            </span>
-          )}
-        </div>
+        {/* Content */}
+        <div className="flex-1 p-4 flex flex-col justify-between">
+          <div>
+            {/* Header: User and Time */}
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                {offer.user && (
+                  <>
+                    {offer.user.avatar_url ? (
+                      <Image
+                        src={offer.user.avatar_url}
+                        alt={offer.user.name || 'User'}
+                        width={20}
+                        height={20}
+                        className="rounded-full"
+                      />
+                    ) : (
+                      <div className="w-5 h-5 rounded-full bg-orange-500 flex items-center justify-center text-white text-xs">
+                        {offer.user.name?.[0]?.toUpperCase() || 'U'}
+                      </div>
+                    )}
+                    <span className="font-medium text-gray-700 dark:text-gray-300">{offer.user.name || 'Usuario'}</span>
+                    <span>•</span>
+                  </>
+                )}
+                <span>{formatRelativeTime(offer.created_at)}</span>
+                {offer.source === 'scraper' && (
+                  <span className="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded text-xs">Auto</span>
+                )}
+              </div>
+            </div>
 
-        {/* Description */}
-        {offer.description && (
-          <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-            {offer.description}
-          </p>
-        )}
+            {/* Title */}
+            <Link href={`/oferta/${offer.id}`}>
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white hover:text-orange-600 dark:hover:text-orange-500 transition line-clamp-2 mb-2">
+                {offer.title}
+              </h3>
+            </Link>
 
-        {/* User Info */}
-        {offer.user && (
-          <div className="flex items-center space-x-2 mb-3 text-sm text-gray-500">
-            {offer.user.avatar_url && (
-              <Image
-                src={offer.user.avatar_url}
-                alt={offer.user.name || 'User'}
-                width={20}
-                height={20}
-                className="rounded-full"
-              />
+            {/* Description */}
+            {offer.description && (
+              <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-3">
+                {offer.description}
+              </p>
             )}
-            <span>{offer.user.name || 'Usuario'}</span>
-            <span>•</span>
-            <span>{formatRelativeTime(offer.created_at)}</span>
           </div>
-        )}
 
-        {/* Actions */}
-        {showActions && (
-          <div className="flex items-center justify-between pt-3 border-t">
-            <div className="flex items-center space-x-4">
+          {/* Footer: Price and Actions */}
+          <div className="flex items-center justify-between mt-auto">
+            <div className="flex items-center gap-4">
+              {/* Price */}
+              <span className="text-xl font-bold text-green-600 dark:text-green-400">
+                {formatPrice(offer.price)}
+              </span>
+
               {/* Like Button */}
-              {onLike && (
+              {showActions && onLike && (
                 <button
                   onClick={() => onLike(offer.id)}
-                  className="flex items-center space-x-1 text-gray-600 hover:text-red-500 transition"
+                  className="flex items-center gap-1 text-gray-500 dark:text-gray-400 hover:text-red-500 transition"
                 >
-                  <span className="text-xl">❤️</span>
-                  <span className="text-sm">{offer.likes_count}</span>
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-sm font-medium">{offer.likes_count}</span>
                 </button>
               )}
             </div>
 
-            {/* Affiliate Link */}
-            <a
-              href={offer.affiliate_link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition text-sm font-medium"
-            >
-              Ver Oferta
-            </a>
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2">
+              <a
+                href={offer.affiliate_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition text-sm font-medium"
+              >
+                Ver Oferta
+              </a>
+              {onDelete && (
+                <button
+                  onClick={() => onDelete(offer.id)}
+                  className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition text-sm"
+                >
+                  🗑️
+                </button>
+              )}
+            </div>
           </div>
-        )}
-
-        {/* Delete Button (for admin/owner) */}
-        {onDelete && (
-          <button
-            onClick={() => onDelete(offer.id)}
-            className="w-full mt-3 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition text-sm font-medium"
-          >
-            Eliminar
-          </button>
-        )}
+        </div>
       </div>
     </div>
   );
