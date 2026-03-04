@@ -6,11 +6,13 @@ import { Offer, OfferWithUser, CreateOfferDto } from '@/types/offer';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
 export function useOffers() {
+  console.log('📦 useOffers: Hook initialized');
   const [offers, setOffers] = useState<OfferWithUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('📦 useOffers: useEffect triggered');
     fetchOffers();
 
     // Subscribe to realtime changes
@@ -37,18 +39,28 @@ export function useOffers() {
 
   const fetchOffers = async () => {
     try {
+      console.log('📦 useOffers: Fetching offers...');
       setLoading(true);
+      const startTime = performance.now();
+      
       const { data, error } = await supabase
         .from('offers')
         .select(`
           *,
-          user:profiles(name, avatar_url)
+          user:profiles!user_id(name, avatar_url)
         `)
         .eq('status', 'active')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      const endTime = performance.now();
+      console.log(`📦 useOffers: Query took ${(endTime - startTime).toFixed(2)}ms`);
 
+      if (error) {
+        console.error('❌ useOffers: Error fetching offers:', error);
+        throw error;
+      }
+
+      console.log(`✅ useOffers: Fetched ${data?.length || 0} offers`);
       setOffers(data as OfferWithUser[]);
       setError(null);
     } catch (err) {
@@ -56,16 +68,23 @@ export function useOffers() {
       setError('Error al cargar ofertas');
     } finally {
       setLoading(false);
+      console.log('📦 useOffers: Loading complete');
     }
   };
 
   const createOffer = async (offerData: CreateOfferDto): Promise<Offer | null> => {
     try {
+      console.log('📦 useOffers: Creating offer...', offerData.title);
+      const startTime = performance.now();
+      
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
+        console.error('❌ useOffers: No user authenticated');
         throw new Error('Usuario no autenticado');
       }
+
+      console.log('📦 useOffers: User ID:', user.id);
 
       const { data, error } = await supabase
         .from('offers')
@@ -78,8 +97,15 @@ export function useOffers() {
         .select()
         .single();
 
-      if (error) throw error;
+      const endTime = performance.now();
+      console.log(`📦 useOffers: Insert took ${(endTime - startTime).toFixed(2)}ms`);
 
+      if (error) {
+        console.error('❌ useOffers: Error creating offer:', error);
+        throw error;
+      }
+
+      console.log('✅ useOffers: Offer created successfully:', data.id);
       return data;
     } catch (err) {
       console.error('Error creating offer:', err);

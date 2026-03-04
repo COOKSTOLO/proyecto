@@ -5,24 +5,20 @@ import OfferCard from '@/components/OfferCard';
 import Loading from '@/components/Loading';
 
 export default function HomePage() {
+  console.log('🏠 HomePage: Component rendered');
   const { offers, loading, toggleLike } = useOffers();
 
+  console.log('🏠 HomePage: Offers count:', offers.length, 'Loading:', loading);
+
   if (loading) {
+    console.log('⏳ HomePage: Still loading offers...');
     return <Loading />;
   }
 
+  console.log('✅ HomePage: Rendering', offers.length, 'offers');
+
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Hero Section */}
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          🔥 Los Mejores Ofertonazos del Momento
-        </h1>
-        <p className="text-lg text-gray-600">
-          Descubre las mejores ofertas seleccionadas por la comunidad
-        </p>
-      </div>
-
       {/* Offers Grid */}
       {offers.length === 0 ? (
         <div className="text-center py-20">

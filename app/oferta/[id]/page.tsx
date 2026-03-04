@@ -15,7 +15,7 @@ export default async function OfferDetailPage({ params }: PageProps) {
     .from('offers')
     .select(`
       *,
-      user:profiles(name, avatar_url, email)
+      user:profiles!user_id(name, avatar_url, email)
     `)
     .eq('id', id)
     .single();

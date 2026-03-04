@@ -6,9 +6,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { useOffers } from '@/hooks/useOffers';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { validateOfferData } from '@/utils/validators';
+import { supabase } from '@/lib/supabaseClient';
+import Image from 'next/image';
 
 export default function CreateOfferPage() {
+  console.log('🎨 CreateOfferPage: Component mounted');
   const { user, canCreateOffers } = useAuth();
+  console.log('🎨 CreateOfferPage: User:', user?.email, 'Can create:', canCreateOffers);
   const { createOffer } = useOffers();
   const router = useRouter();
 
@@ -20,18 +24,106 @@ export default function CreateOfferPage() {
     affiliate_link: '',
   });
 
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('📷 Image file selected');
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    console.log('📷 File size:', (file.size / 1024 / 1024).toFixed(2), 'MB');
+    // Validar tamaño máximo 1MB
+    const maxSize = 1 * 1024 * 1024; // 1MB en bytes
+    if (file.size > maxSize) {
+      console.log('❌ Image too large');
+      setError('La imagen debe ser menor a 1 MB');
+      return;
+    }
+
+    // Validar tipo de archivo
+    if (!file.type.startsWith('image/')) {
+      setError('Solo se permiten archivos de imagen');
+      return;
+    }
+
+    setImageFile(file);
     setError(null);
 
-    // Validate
+    // Crear preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const uploadImage = async (): Promise<string> => {
+    console.log('📤 Starting image upload...');
+    if (!imageFile || !user) throw new Error('No hay imagen o usuario');
+
+    setUploadingImage(true);
+
+    try {
+      // Generar nombre único para la imagen
+      const fileExt = imageFile.name.split('.').pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = `offers/${fileName}`;
+      console.log('📤 Uploading to:', filePath);
+
+      // Subir imagen a Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('offer-images')
+        .upload(filePath, imageFile, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+
+      if (uploadError) {
+        console.error('❌ Upload error:', uploadError);
+        throw uploadError;
+      }
+
+      console.log('✅ Image uploaded successfully');
+      // Obtener URL pública
+      const { data } = supabase.storage
+        .from('offer-images')
+        .getPublicUrl(filePath);
+
+      console.log('✅ Public URL:', data.publicUrl);
+      return data.publicUrl;
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('📝 Form submitted');
+    setError(null);
+
+    // Si hay archivo de imagen, subirlo primero
+    let finalImageUrl = formData.image_url;
+    
+    if (imageFile) {
+      console.log('📤 Need to upload image first');
+      try {
+        finalImageUrl = await uploadImage();
+      } catch (err) {
+        setError('Error al subir la imagen. Inténtalo de nuevo.');
+        console.error(err);
+        return;
+      }
+    }
+
+    // Validar
     const validation = validateOfferData({
       title: formData.title,
       price: parseFloat(formData.price),
-      image_url: formData.image_url,
+      image_url: finalImageUrl,
       affiliate_link: formData.affiliate_link,
     });
 
@@ -46,16 +138,18 @@ export default function CreateOfferPage() {
     }
 
     setLoading(true);
+    console.log('✨ Creating offer...');
 
     try {
       await createOffer({
         title: formData.title,
         price: parseFloat(formData.price),
-        image_url: formData.image_url,
+        image_url: finalImageUrl,
         description: formData.description || undefined,
         affiliate_link: formData.affiliate_link,
       });
 
+      console.log('✅ Offer created successfully!');
       router.push('/');
     } catch (err) {
       setError('Error al crear la oferta. Inténtalo de nuevo.');
@@ -122,20 +216,69 @@ export default function CreateOfferPage() {
             />
           </div>
 
-          {/* Image URL */}
+          {/* Image Upload or URL */}
           <div>
-            <label htmlFor="image_url" className="block text-sm font-medium text-gray-700 mb-2">
-              URL de la imagen *
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Imagen del producto *
             </label>
-            <input
-              type="url"
-              id="image_url"
-              required
-              value={formData.image_url}
-              onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-600 focus:border-transparent"
-              placeholder="https://ejemplo.com/imagen.jpg"
-            />
+            
+            <div className="space-y-4">
+              {/* File Upload */}
+              <div>
+                <label
+                  htmlFor="image_file"
+                  className="block w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-500 cursor-pointer transition text-center"
+                >
+                  <span className="text-gray-600">
+                    📷 Subir imagen (máx. 1 MB)
+                  </span>
+                  <input
+                    type="file"
+                    id="image_file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              {/* Image Preview */}
+              {imagePreview && (
+                <div className="relative w-full h-48 rounded-lg overflow-hidden border border-gray-300">
+                  <Image
+                    src={imagePreview}
+                    alt="Preview"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              )}
+
+              {/* OR Divider */}
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-gray-500">O usa una URL</span>
+                </div>
+              </div>
+
+              {/* URL Input */}
+              <input
+                type="url"
+                id="image_url"
+                value={formData.image_url}
+                onChange={(e) => {
+                  setFormData({ ...formData, image_url: e.target.value });
+                  setImageFile(null);
+                  setImagePreview('');
+                }}
+                disabled={!!imageFile}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-600 focus:border-transparent disabled:bg-gray-100"
+                placeholder="https://ejemplo.com/imagen.jpg"
+              />
+            </div>
           </div>
 
           {/* Description */}
@@ -172,10 +315,10 @@ export default function CreateOfferPage() {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={loading || !canCreateOffers}
+            disabled={loading || uploadingImage || !canCreateOffers}
             className="w-full px-6 py-3 bg-orange-600 text-white font-medium rounded-lg hover:bg-orange-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            {loading ? 'Publicando...' : 'Publicar Oferta'}
+            {uploadingImage ? 'Subiendo imagen...' : loading ? 'Publicando...' : 'Publicar Oferta'}
           </button>
         </form>
       </div>

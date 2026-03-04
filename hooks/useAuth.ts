@@ -13,16 +13,23 @@ export function useAuth() {
   useEffect(() => {
     // Get initial session
     const getUser = async () => {
+      const startTime = performance.now();
       try {
+        console.log('🔍 useAuth: Getting session...');
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user) {
+          console.log('✅ useAuth: Session found for', session.user.email);
           setSupabaseUser(session.user);
           await fetchProfile(session.user.id);
+        } else {
+          console.log('❌ useAuth: No session found');
         }
       } catch (error) {
         console.error('Error fetching user:', error);
       } finally {
+        const endTime = performance.now();
+        console.log(`✅ useAuth: Loading complete in ${(endTime - startTime).toFixed(2)}ms`);
         setLoading(false);
       }
     };
@@ -50,16 +57,24 @@ export function useAuth() {
 
   const fetchProfile = async (userId: string) => {
     try {
+      console.log('🔍 useAuth: Fetching profile for', userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ useAuth: Error fetching profile:', error);
+        // Even if profile fetch fails, set loading to false
+        setUser(null);
+        return;
+      }
+      console.log('✅ useAuth: Profile fetched:', data.email, 'Role:', data.role);
       setUser(data);
     } catch (error) {
       console.error('Error fetching profile:', error);
+      setUser(null);
     }
   };
 
