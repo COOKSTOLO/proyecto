@@ -6,8 +6,13 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
 export default function Navbar() {
-  const { user, loading, isAdmin } = useAuth();
+  const { user, loading, isAdmin, signOut } = useAuth();
   const router = useRouter();
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/');
+  };
 
   const handleAdminClick = () => {
     if (user?.role === 'admin') {
@@ -75,6 +80,7 @@ export default function Navbar() {
                         </span>
                       </Link>
                       <button
+                        onClick={handleSignOut}
                         className="text-sm text-gray-600 hover:text-orange-600 transition"
                       >
                         Salir

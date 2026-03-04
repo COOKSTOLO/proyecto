@@ -5,17 +5,11 @@ import OfferCard from '@/components/OfferCard';
 import Loading from '@/components/Loading';
 
 export default function HomePage() {
-  console.log('🏠 HomePage: Component rendered');
   const { offers, loading, toggleLike } = useOffers();
 
-  console.log('🏠 HomePage: Offers count:', offers.length, 'Loading:', loading);
-
   if (loading) {
-    console.log('⏳ HomePage: Still loading offers...');
     return <Loading />;
   }
-
-  console.log('✅ HomePage: Rendering', offers.length, 'offers');
 
   return (
     <div className="container mx-auto px-4 py-8">

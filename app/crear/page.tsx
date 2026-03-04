@@ -10,9 +10,7 @@ import { supabase } from '@/lib/supabaseClient';
 import Image from 'next/image';
 
 export default function CreateOfferPage() {
-  console.log('🎨 CreateOfferPage: Component mounted');
   const { user, canCreateOffers } = useAuth();
-  console.log('🎨 CreateOfferPage: User:', user?.email, 'Can create:', canCreateOffers);
   const { createOffer } = useOffers();
   const router = useRouter();
 
