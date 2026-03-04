@@ -20,7 +20,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
         router.push('/');
       }
     }
-  }, [user, loading, isAdmin, router]);
+  }, [loading, user, isAdmin, router]);
 
   if (loading) {
     return (

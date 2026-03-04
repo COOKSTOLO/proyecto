@@ -24,30 +24,8 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Only check for admin routes
-  if (request.nextUrl.pathname.startsWith('/admin')) {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    if (!session?.user) {
-      const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = '/login';
-      return NextResponse.redirect(redirectUrl);
-    }
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', session.user.id)
-      .single();
-
-    if (profile?.role !== 'admin') {
-      const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = '/';
-      return NextResponse.redirect(redirectUrl);
-    }
-  }
+  // Refrescar sesión para mantenerla activa
+  await supabase.auth.getSession();
 
   return supabaseResponse;
 }

@@ -16,12 +16,11 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   console.log('🔒 ProtectedRoute: User:', user?.email, 'Loading:', loading);
 
   useEffect(() => {
-    console.log('🔒 ProtectedRoute: useEffect - Loading:', loading, 'User:', user?.email);
     if (!loading && !user) {
       console.log('❌ ProtectedRoute: No user, redirecting to login');
       router.push('/login');
     }
-  }, [user, loading, router]);
+  }, [loading, user]);
 
   if (loading) {
     console.log('⏳ ProtectedRoute: Still loading...');

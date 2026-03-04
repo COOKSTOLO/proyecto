@@ -1,90 +1,53 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { Offer, OfferWithUser, CreateOfferDto } from '@/types/offer';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
 export function useOffers() {
-  console.log('📦 useOffers: Hook initialized');
   const [offers, setOffers] = useState<OfferWithUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    console.log('📦 useOffers: useEffect triggered');
-    fetchOffers();
-
-    // Subscribe to realtime changes
-    const channel: RealtimeChannel = supabase
-      .channel('offers-channel')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'offers',
-        },
-        () => {
-          // Refetch offers when changes occur
-          fetchOffers();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  const fetchOffers = async () => {
+  const fetchOffers = useCallback(async (limit = 20) => {
+    setLoading(true);
+    setError(null);
     try {
-      console.log('📦 useOffers: Fetching offers...');
-      setLoading(true);
-      const startTime = performance.now();
-      
       const { data, error } = await supabase
         .from('offers')
         .select(`
-          *,
+          id, title, price, image_url, description, affiliate_link, user_id, likes_count, source, status, created_at, updated_at,
           user:profiles!user_id(name, avatar_url)
         `)
         .eq('status', 'active')
-        .order('created_at', { ascending: false });
-
-      const endTime = performance.now();
-      console.log(`📦 useOffers: Query took ${(endTime - startTime).toFixed(2)}ms`);
+        .order('created_at', { ascending: false })
+        .limit(limit);
 
       if (error) {
-        console.error('❌ useOffers: Error fetching offers:', error);
-        throw error;
+        setError('Failed to fetch offers. Please try again later.');
+        return;
       }
 
-      console.log(`✅ useOffers: Fetched ${data?.length || 0} offers`);
-      setOffers(data as OfferWithUser[]);
-      setError(null);
-    } catch (err) {
-      console.error('Error fetching offers:', err);
-      setError('Error al cargar ofertas');
+      setOffers(data || []);
+    } catch {
+      setError('An unexpected error occurred while fetching offers.');
     } finally {
       setLoading(false);
-      console.log('📦 useOffers: Loading complete');
     }
-  };
+  }, []);
 
-  const createOffer = async (offerData: CreateOfferDto): Promise<Offer | null> => {
+  useEffect(() => {
+    fetchOffers(20);
+  }, [fetchOffers]);
+
+  const createOffer = async (offerData: CreateOfferDto): Promise<Offer> => {
     try {
-      console.log('📦 useOffers: Creating offer...', offerData.title);
-      const startTime = performance.now();
-      
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        console.error('❌ useOffers: No user authenticated');
         throw new Error('Usuario no autenticado');
       }
-
-      console.log('📦 useOffers: User ID:', user.id);
 
       const { data, error } = await supabase
         .from('offers')
@@ -97,18 +60,10 @@ export function useOffers() {
         .select()
         .single();
 
-      const endTime = performance.now();
-      console.log(`📦 useOffers: Insert took ${(endTime - startTime).toFixed(2)}ms`);
-
-      if (error) {
-        console.error('❌ useOffers: Error creating offer:', error);
-        throw error;
-      }
-
-      console.log('✅ useOffers: Offer created successfully:', data.id);
-      return data;
+      if (error) throw error;
+      const createdOffer = data as Offer;
+      return createdOffer;
     } catch (err) {
-      console.error('Error creating offer:', err);
       throw err;
     }
   };
@@ -122,7 +77,6 @@ export function useOffers() {
 
       if (error) throw error;
     } catch (err) {
-      console.error('Error deleting offer:', err);
       throw err;
     }
   };
@@ -135,7 +89,6 @@ export function useOffers() {
         throw new Error('Debes iniciar sesión para dar like');
       }
 
-      // Check if already liked
       const { data: existingLike } = await supabase
         .from('likes')
         .select('*')
@@ -144,7 +97,6 @@ export function useOffers() {
         .single();
 
       if (existingLike) {
-        // Unlike
         const { error } = await supabase
           .from('likes')
           .delete()
@@ -153,7 +105,6 @@ export function useOffers() {
 
         if (error) throw error;
       } else {
-        // Like
         const { error } = await supabase
           .from('likes')
           .insert(
@@ -166,7 +117,6 @@ export function useOffers() {
         if (error) throw error;
       }
     } catch (err) {
-      console.error('Error toggling like:', err);
       throw err;
     }
   };

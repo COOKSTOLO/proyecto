@@ -3,121 +3,60 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { User } from '@/types/user';
-import { User as SupabaseUser } from '@supabase/supabase-js';
+
+interface Profile {
+  id: string;
+  name: string | null;
+  avatar_url: string | null;
+  subscription_active: boolean;
+  role: 'user' | 'admin';
+}
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
-  const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    const getUser = async () => {
-      const startTime = performance.now();
+    const fetchUser = async () => {
       try {
-        console.log('🔍 useAuth: Getting session...');
         const { data: { session } } = await supabase.auth.getSession();
-        
         if (session?.user) {
-          console.log('✅ useAuth: Session found for', session.user.email);
-          setSupabaseUser(session.user);
-          await fetchProfile(session.user.id);
-        } else {
-          console.log('❌ useAuth: No session found');
-        }
-      } catch (error) {
-        console.error('Error fetching user:', error);
-      } finally {
-        const endTime = performance.now();
-        console.log(`✅ useAuth: Loading complete in ${(endTime - startTime).toFixed(2)}ms`);
-        setLoading(false);
-      }
-    };
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('id, name, avatar_url, subscription_active, role')
+            .eq('id', session.user.id)
+            .single();
 
-    getUser();
+          const typedProfile = profile as Profile | null;
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session?.user) {
-          setSupabaseUser(session.user);
-          await fetchProfile(session.user.id);
+          if (typedProfile) {
+            setUser({
+              id: session.user.id,
+              name: typedProfile.name,
+              email: session.user.email || null,
+              avatar_url: typedProfile.avatar_url,
+              role: typedProfile.role,
+              subscription_active: typedProfile.subscription_active,
+              created_at: session.user.created_at || new Date().toISOString(),
+              updated_at: session.user.updated_at || new Date().toISOString(),
+            });
+          }
         } else {
-          setSupabaseUser(null);
           setUser(null);
         }
+      } catch (error) {
+        console.error('Error fetching user or profile:', error);
+      } finally {
         setLoading(false);
       }
-    );
-
-    return () => {
-      subscription.unsubscribe();
     };
+
+    fetchUser();
   }, []);
-
-  const fetchProfile = async (userId: string) => {
-    try {
-      console.log('🔍 useAuth: Fetching profile for', userId);
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error) {
-        console.error('❌ useAuth: Error fetching profile:', error);
-        // Even if profile fetch fails, set loading to false
-        setUser(null);
-        return;
-      }
-      console.log('✅ useAuth: Profile fetched:', data.email, 'Role:', data.role);
-      setUser(data);
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-      setUser(null);
-    }
-  };
-
-  const signInWithGoogle = async () => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error signing in with Google:', error);
-      throw error;
-    }
-  };
-
-  const signOut = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      setUser(null);
-      setSupabaseUser(null);
-    } catch (error) {
-      console.error('Error signing out:', error);
-      throw error;
-    }
-  };
 
   const isAdmin = user?.role === 'admin';
   const hasSubscription = user?.subscription_active || false;
   const canCreateOffers = isAdmin || hasSubscription;
 
-  return {
-    user,
-    supabaseUser,
-    loading,
-    signInWithGoogle,
-    signOut,
-    isAdmin,
-    hasSubscription,
-    canCreateOffers,
-    refreshProfile: () => supabaseUser && fetchProfile(supabaseUser.id),
-  };
+  return { user, loading, isAdmin, canCreateOffers };
 }

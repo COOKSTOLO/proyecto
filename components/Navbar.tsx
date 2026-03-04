@@ -3,9 +3,19 @@
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 export default function Navbar() {
-  const { user, loading, signOut } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
+  const router = useRouter();
+
+  const handleAdminClick = () => {
+    if (user?.role === 'admin') {
+      router.push('/admin');
+    } else {
+      alert('No tienes permisos para acceder al panel de administración.');
+    }
+  };
 
   return (
     <nav className="bg-white shadow-md sticky top-0 z-50">
@@ -36,14 +46,14 @@ export default function Navbar() {
                       Crear Oferta
                     </Link>
                     {user.role === 'admin' && (
-                      <Link
-                        href="/admin"
+                      <button
+                        onClick={handleAdminClick}
                         className="text-gray-700 hover:text-orange-600 transition"
                       >
                         Admin
-                      </Link>
+                      </button>
                     )}
-                    
+
                     {/* User Menu */}
                     <div className="flex items-center space-x-3">
                       <Link href="/perfil" className="flex items-center space-x-2">
@@ -65,7 +75,6 @@ export default function Navbar() {
                         </span>
                       </Link>
                       <button
-                        onClick={signOut}
                         className="text-sm text-gray-600 hover:text-orange-600 transition"
                       >
                         Salir
