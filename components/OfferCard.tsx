@@ -35,7 +35,7 @@ export default function OfferCard({
         </Link>
 
         {/* Content */}
-        <div className="flex-1 p-4 flex flex-col justify-between">
+        <div className="flex-1 p-4 flex flex-col justify-between bg-gray-50 dark:bg-gray-900">
           <div>
             {/* Header: User and Time */}
             <div className="flex items-center justify-between mb-2">
@@ -68,14 +68,14 @@ export default function OfferCard({
 
             {/* Title */}
             <Link href={`/oferta/${offer.id}`}>
-              <h3 className="text-base font-semibold text-gray-900 dark:text-white hover:text-orange-600 dark:hover:text-orange-500 transition line-clamp-2 mb-2">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white hover:text-orange-600 dark:hover:text-orange-500 transition mb-2">
                 {offer.title}
               </h3>
             </Link>
 
             {/* Description */}
             {offer.description && (
-              <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-3">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
                 {offer.description}
               </p>
             )}
@@ -109,14 +109,14 @@ export default function OfferCard({
                 href={offer.affiliate_link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition text-sm font-medium"
+                className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition text-sm font-medium w-full text-center"
               >
                 Ver Oferta
               </a>
               {onDelete && (
                 <button
                   onClick={() => onDelete(offer.id)}
-                  className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition text-sm"
+                  className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition text-sm w-full"
                 >
                   🗑️
                 </button>
