@@ -6,8 +6,13 @@ import OfferCard from '@/components/OfferCard';
 import Loading from '@/components/Loading';
 import { OFFER_CATEGORIES, OfferCategory } from '@/lib/categories';
 
+const ALL_CATEGORIES = [
+  { value: null as OfferCategory | null, label: 'Todas', emoji: '🔥' },
+  ...OFFER_CATEGORIES.map((c) => ({ value: c.value as OfferCategory | null, label: c.label, emoji: c.emoji })),
+];
+
 export default function HomePage() {
-  const { offers, loading, toggleLike } = useOffers();
+  const { offers, loading, toggleLike, likedOfferIds } = useOffers();
   const [selectedCategory, setSelectedCategory] = useState<OfferCategory | null>(null);
 
   const filteredOffers = selectedCategory
@@ -20,6 +25,28 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-300 flex flex-col">
+
+      {/* Barra de categorías — sticky justo bajo la navbar */}
+      <div className="sticky top-16 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="max-w-4xl mx-auto px-4 py-2 flex gap-1.5 justify-between">
+          {ALL_CATEGORIES.map((cat) => (
+            <button
+              key={String(cat.value)}
+              onClick={() => setSelectedCategory(cat.value)}
+              title={cat.label}
+              className={`flex-1 flex flex-col items-center gap-0.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                selectedCategory === cat.value
+                  ? 'bg-orange-600 text-white'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-orange-100 dark:hover:bg-orange-900/40 hover:text-orange-600 dark:hover:text-orange-400'
+              }`}
+            >
+              <span className="text-base leading-none">{cat.emoji}</span>
+              <span className="hidden sm:block truncate w-full text-center text-[10px] leading-tight px-0.5">{cat.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Container with subtle side shadows */}
       <div className="flex justify-center flex-1">
         {/* Left shadow - full height */}
@@ -31,35 +58,6 @@ export default function HomePage() {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-4 transition-colors duration-300">
             <h1 className="text-xl font-bold text-gray-800 dark:text-white">🔥 Ofertas Recientes</h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">Las mejores ofertas encontradas para ti</p>
-          </div>
-
-          {/* Category filter chips */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm px-4 py-3 mb-4 transition-colors duration-300">
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-categories">
-              <button
-                onClick={() => setSelectedCategory(null)}
-                className={`shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                  selectedCategory === null
-                    ? 'bg-orange-600 text-white'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
-                }`}
-              >
-                🔥 Todas
-              </button>
-              {OFFER_CATEGORIES.map((cat) => (
-                <button
-                  key={cat.value}
-                  onClick={() => setSelectedCategory(cat.value)}
-                  className={`shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                    selectedCategory === cat.value
-                      ? 'bg-orange-600 text-white'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
-                  }`}
-                >
-                  {cat.emoji} {cat.label}
-                </button>
-              ))}
-            </div>
           </div>
 
           {/* Offers List */}
@@ -78,6 +76,7 @@ export default function HomePage() {
                 <OfferCard
                   key={offer.id}
                   offer={offer}
+                  isLiked={likedOfferIds.has(offer.id)}
                   onLike={toggleLike}
                 />
               ))}

@@ -3,6 +3,13 @@ import fs from 'fs';
 import path from 'path';
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
+  // Verificar clave secreta interna
+  const apiSecret = process.env.API_SECRET_KEY;
+  const providedSecret = req.headers['x-api-secret'];
+  if (!apiSecret || providedSecret !== apiSecret) {
+    return res.status(401).json({ message: 'No autorizado' });
+  }
+
   if (req.method === 'POST') {
     const { file } = req.body;
 

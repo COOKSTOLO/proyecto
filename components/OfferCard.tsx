@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useState } from 'react';
 import { OfferWithUser } from '@/types/offer';
 import { formatPrice } from '@/utils/formatPrice';
 import { formatRelativeTime } from '@/utils/formatDate';
@@ -9,17 +10,31 @@ import { getCategoryInfo } from '@/lib/categories';
 
 interface OfferCardProps {
   offer: OfferWithUser;
-  onLike?: (offerId: string) => void;
+  isLiked?: boolean;
+  onLike?: (offerId: string) => Promise<void> | void;
   onDelete?: (offerId: string) => void;
   showActions?: boolean;
 }
 
 export default function OfferCard({
   offer,
+  isLiked = false,
   onLike,
   onDelete,
   showActions = true,
 }: OfferCardProps) {
+  const [pending, setPending] = useState(false);
+
+  const handleLike = async () => {
+    if (!onLike || pending) return;
+    setPending(true);
+    try {
+      await onLike(offer.id);
+    } finally {
+      setPending(false);
+    }
+  };
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
       <div className="flex flex-col sm:flex-row">
@@ -101,12 +116,26 @@ export default function OfferCard({
               {/* Like Button */}
               {showActions && onLike && (
                 <button
-                  onClick={() => onLike(offer.id)}
-                  className="flex items-center gap-1 text-gray-500 dark:text-gray-400 hover:text-red-500 transition"
+                  onClick={handleLike}
+                  disabled={pending}
+                  className={`flex items-center gap-1 transition-all duration-150 active:scale-110 disabled:cursor-not-allowed ${
+                    isLiked
+                      ? 'text-red-500 hover:text-red-600'
+                      : 'text-gray-400 dark:text-gray-500 hover:text-red-400'
+                  }`}
+                  aria-label={isLiked ? 'Quitar like' : 'Dar like'}
                 >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
-                  </svg>
+                  {isLiked ? (
+                    // Corazón relleno
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    // Corazón vacío
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
+                  )}
                   <span className="text-sm font-medium">{offer.likes_count}</span>
                 </button>
               )}

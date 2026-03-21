@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { Offer, OfferWithUser, CreateOfferDto, OfferCategory } from '@/types/offer';
 import { RealtimeChannel } from '@supabase/supabase-js';
@@ -9,6 +9,22 @@ export function useOffers() {
   const [offers, setOffers] = useState<OfferWithUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [likedOfferIds, setLikedOfferIds] = useState<Set<string>>(new Set());
+  const channelRef = useRef<RealtimeChannel | null>(null);
+
+  const fetchUserLikes = useCallback(async (offerIds: string[]) => {
+    if (offerIds.length === 0) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase
+      .from('likes')
+      .select('offer_id')
+      .eq('user_id', user.id)
+      .in('offer_id', offerIds);
+    if (data) {
+      setLikedOfferIds(new Set(data.map((l: any) => l.offer_id as string)));
+    }
+  }, []);
 
   const fetchOffers = useCallback(async (limit = 20, category?: OfferCategory | null) => {
     setLoading(true);
@@ -33,17 +49,56 @@ export function useOffers() {
         return;
       }
 
-      setOffers(data || []);
+      const fetched = (data || []) as OfferWithUser[];
+      setOffers(fetched);
+      fetchUserLikes(fetched.map((o) => o.id));
     } catch {
       setError('An unexpected error occurred while fetching offers.');
     } finally {
       setLoading(false);
     }
+  }, [fetchUserLikes]);
+
+  // Realtime: sincroniza likes_count cuando otros usuarios dan like
+  useEffect(() => {
+    channelRef.current = supabase
+      .channel('offers-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'offers' },
+        (payload) => {
+          const updated = payload.new as Offer;
+          setOffers((prev) =>
+            prev.map((o) =>
+              o.id === updated.id ? { ...o, likes_count: updated.likes_count } : o
+            )
+          );
+        }
+      )
+      .subscribe();
+
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
   }, []);
 
   useEffect(() => {
     fetchOffers(20);
   }, [fetchOffers]);
+
+  // Tambien refrescar liked IDs si cambia la sesión
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      setOffers((prev) => {
+        fetchUserLikes(prev.map((o) => o.id));
+        return prev;
+      });
+    });
+    return () => subscription.unsubscribe();
+  }, [fetchUserLikes]);
 
   const createOffer = async (offerData: CreateOfferDto): Promise<Offer> => {
     try {
@@ -86,41 +141,53 @@ export function useOffers() {
   };
 
   const toggleLike = async (offerId: string): Promise<void> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Debes iniciar sesión para dar like');
+
+    const isLiked = likedOfferIds.has(offerId);
+
+    // Optimistic update: respuesta inmediata en la UI
+    setOffers((prev) =>
+      prev.map((o) =>
+        o.id === offerId
+          ? { ...o, likes_count: Math.max(0, o.likes_count + (isLiked ? -1 : 1)) }
+          : o
+      )
+    );
+    setLikedOfferIds((prev) => {
+      const next = new Set(prev);
+      isLiked ? next.delete(offerId) : next.add(offerId);
+      return next;
+    });
+
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error('Debes iniciar sesión para dar like');
-      }
-
-      const { data: existingLike } = await supabase
-        .from('likes')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('offer_id', offerId)
-        .single();
-
-      if (existingLike) {
+      if (isLiked) {
         const { error } = await supabase
           .from('likes')
           .delete()
           .eq('user_id', user.id)
           .eq('offer_id', offerId);
-
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('likes')
-          .insert(
-            {
-              user_id: user.id,
-              offer_id: offerId,
-            } as any
-          );
-
+          .insert({ user_id: user.id, offer_id: offerId } as any);
         if (error) throw error;
       }
     } catch (err) {
+      // Rollback si falla el servidor
+      setOffers((prev) =>
+        prev.map((o) =>
+          o.id === offerId
+            ? { ...o, likes_count: Math.max(0, o.likes_count + (isLiked ? 1 : -1)) }
+            : o
+        )
+      );
+      setLikedOfferIds((prev) => {
+        const next = new Set(prev);
+        isLiked ? next.add(offerId) : next.delete(offerId);
+        return next;
+      });
       throw err;
     }
   };
@@ -129,6 +196,7 @@ export function useOffers() {
     offers,
     loading,
     error,
+    likedOfferIds,
     createOffer,
     deleteOffer,
     toggleLike,

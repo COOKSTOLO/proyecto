@@ -69,10 +69,11 @@ export function useAuth() {
   const canCreateOffers = isAdmin || hasSubscription;
 
   const signInWithGoogle = async () => {
+    const base = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${base}/auth/callback`,
       },
     });
     if (error) throw error;
@@ -87,12 +88,13 @@ export function useAuth() {
   };
 
   const signUpWithEmail = async (email: string, password: string, name: string) => {
+    const base = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin;
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: { name },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: `${base}/auth/callback`,
       },
     });
     if (error) throw error;

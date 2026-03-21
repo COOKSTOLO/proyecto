@@ -3,9 +3,11 @@
 import { useAuth } from '@/hooks/useAuth';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 export default function ProfilePage() {
   const { user, signOut, isAdmin, hasSubscription } = useAuth();
+  const router = useRouter();
 
   if (!user) return null;
 
@@ -81,6 +83,14 @@ export default function ProfilePage() {
 
           {/* Actions */}
           <div className="mt-8 pt-6 border-t space-y-3">
+            {isAdmin && (
+              <button
+                onClick={() => router.push('/admin')}
+                className="w-full px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition flex items-center justify-center gap-2"
+              >
+                <span>👑</span> Panel de Administración
+              </button>
+            )}
             <button
               onClick={signOut}
               className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
