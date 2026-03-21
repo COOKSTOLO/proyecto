@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { Offer, OfferWithUser, CreateOfferDto } from '@/types/offer';
+import { Offer, OfferWithUser, CreateOfferDto, OfferCategory } from '@/types/offer';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
 export function useOffers() {
@@ -10,19 +10,23 @@ export function useOffers() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchOffers = useCallback(async (limit = 20) => {
+  const fetchOffers = useCallback(async (limit = 20, category?: OfferCategory | null) => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await supabase
+      const query = supabase
         .from('offers')
         .select(`
-          id, title, price, image_url, description, affiliate_link, user_id, likes_count, source, status, created_at, updated_at,
+          id, title, price, image_url, description, affiliate_link, user_id, likes_count, source, status, category, created_at, updated_at,
           user:profiles!user_id(name, avatar_url)
         `)
         .eq('status', 'active')
         .order('created_at', { ascending: false })
         .limit(limit);
+
+      const { data, error } = category
+        ? await query.eq('category', category)
+        : await query;
 
       if (error) {
         setError('Failed to fetch offers. Please try again later.');

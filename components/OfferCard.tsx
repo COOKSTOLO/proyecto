@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { OfferWithUser } from '@/types/offer';
 import { formatPrice } from '@/utils/formatPrice';
 import { formatRelativeTime } from '@/utils/formatDate';
+import { getCategoryInfo } from '@/lib/categories';
 
 interface OfferCardProps {
   offer: OfferWithUser;
@@ -63,6 +64,14 @@ export default function OfferCard({
                 {offer.source === 'scraper' && (
                   <span className="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded text-xs">Auto</span>
                 )}
+                {offer.category && (() => {
+                  const cat = getCategoryInfo(offer.category);
+                  return cat ? (
+                    <span className="bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 px-1.5 py-0.5 rounded text-xs">
+                      {cat.emoji} {cat.label}
+                    </span>
+                  ) : null;
+                })()}
               </div>
             </div>
 

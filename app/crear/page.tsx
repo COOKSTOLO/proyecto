@@ -7,6 +7,7 @@ import { useOffers } from '@/hooks/useOffers';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { validateOfferData } from '@/utils/validators';
 import { supabase } from '@/lib/supabaseClient';
+import { OFFER_CATEGORIES, OfferCategory } from '@/lib/categories';
 import Image from 'next/image';
 import { formatPrice } from '@/utils/formatPrice';
 import Link from 'next/link';
@@ -22,6 +23,7 @@ export default function CreateOfferPage() {
     image_url: '',
     description: '',
     affiliate_link: '',
+    category: '' as OfferCategory | '',
   });
 
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -87,6 +89,7 @@ export default function CreateOfferPage() {
         image_url: finalImageUrl,
         description: formData.description || undefined,
         affiliate_link: formData.affiliate_link,
+        category: formData.category || null,
       });
       router.push('/');
     } catch (err) {
@@ -192,8 +195,22 @@ export default function CreateOfferPage() {
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     placeholder="Descripción de la oferta (opcional)..."
-                    className={`${fieldCls} text-gray-700 dark:text-gray-300 mb-6`}
+                    className={`${fieldCls} text-gray-700 dark:text-gray-300 mb-4`}
                   />
+
+                  {/* Category selector */}
+                  <select
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value as OfferCategory | '' })}
+                    className="w-full mb-6 px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  >
+                    <option value="">📂 Categoría (opcional)</option>
+                    {OFFER_CATEGORIES.map((cat) => (
+                      <option key={cat.value} value={cat.value}>
+                        {cat.emoji} {cat.label}
+                      </option>
+                    ))}
+                  </select>
 
                   {/* User Info — static, same box */}
                   <div className="flex items-center space-x-3 mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">

@@ -25,3 +25,25 @@ body {
     text-wrap: balance;
   }
 }
+
+/* Scrollbar personalizada para la barra de categorías */
+.scrollbar-categories {
+  scrollbar-width: thin;
+  scrollbar-color: #ea580c transparent;
+}
+.scrollbar-categories::-webkit-scrollbar {
+  height: 4px;
+}
+.scrollbar-categories::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-categories::-webkit-scrollbar-thumb {
+  background-color: #ea580c;
+  border-radius: 9999px;
+}
+.dark .scrollbar-categories {
+  scrollbar-color: #c2410c transparent;
+}
+.dark .scrollbar-categories::-webkit-scrollbar-thumb {
+  background-color: #c2410c;
+}

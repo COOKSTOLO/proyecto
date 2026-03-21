@@ -1,11 +1,18 @@
 'use client';
 
+import { useState } from 'react';
 import { useOffers } from '@/hooks/useOffers';
 import OfferCard from '@/components/OfferCard';
 import Loading from '@/components/Loading';
+import { OFFER_CATEGORIES, OfferCategory } from '@/lib/categories';
 
 export default function HomePage() {
   const { offers, loading, toggleLike } = useOffers();
+  const [selectedCategory, setSelectedCategory] = useState<OfferCategory | null>(null);
+
+  const filteredOffers = selectedCategory
+    ? offers.filter((o) => o.category === selectedCategory)
+    : offers;
 
   if (loading) {
     return <Loading />;
@@ -26,17 +33,48 @@ export default function HomePage() {
             <p className="text-sm text-gray-500 dark:text-gray-400">Las mejores ofertas encontradas para ti</p>
           </div>
 
+          {/* Category filter chips */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm px-4 py-3 mb-4 transition-colors duration-300">
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-categories">
+              <button
+                onClick={() => setSelectedCategory(null)}
+                className={`shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  selectedCategory === null
+                    ? 'bg-orange-600 text-white'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}
+              >
+                🔥 Todas
+              </button>
+              {OFFER_CATEGORIES.map((cat) => (
+                <button
+                  key={cat.value}
+                  onClick={() => setSelectedCategory(cat.value)}
+                  className={`shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                    selectedCategory === cat.value
+                      ? 'bg-orange-600 text-white'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  {cat.emoji} {cat.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Offers List */}
-          {offers.length === 0 ? (
+          {filteredOffers.length === 0 ? (
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-12 text-center transition-colors duration-300">
-              <div className="text-6xl mb-4">📭</div>
+              <div className="text-6xl mb-4">{selectedCategory ? '🔍' : '📭'}</div>
               <p className="text-xl text-gray-500 dark:text-gray-400">
-                No hay ofertas disponibles en este momento
+                {selectedCategory
+                  ? 'No hay ofertas en esta categoría todavía'
+                  : 'No hay ofertas disponibles en este momento'}
               </p>
             </div>
           ) : (
             <div className="space-y-3">
-              {offers.map((offer, index) => (
+              {filteredOffers.map((offer) => (
                 <OfferCard
                   key={offer.id}
                   offer={offer}

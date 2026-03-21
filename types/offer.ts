@@ -1,3 +1,7 @@
+import { OfferCategory } from '@/lib/categories';
+
+export type { OfferCategory };
+
 export interface Offer {
   id: string;
   title: string;
@@ -9,6 +13,7 @@ export interface Offer {
   likes_count: number;
   source: 'manual' | 'scraper';
   status: 'active' | 'inactive' | 'pending';
+  category: OfferCategory | null;
   created_at: string;
   updated_at: string;
 }
@@ -26,4 +31,5 @@ export interface CreateOfferDto {
   image_url: string;
   description?: string;
   affiliate_link: string;
+  category?: OfferCategory | null;
 }

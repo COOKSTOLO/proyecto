@@ -53,6 +53,7 @@ export interface Database {
           likes_count: number
           source: 'manual' | 'scraper'
           status: 'active' | 'inactive' | 'pending'
+          category: string | null
           created_at: string
           updated_at: string
         }
@@ -67,6 +68,7 @@ export interface Database {
           likes_count?: number
           source?: 'manual' | 'scraper'
           status?: 'active' | 'inactive' | 'pending'
+          category?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -81,6 +83,7 @@ export interface Database {
           likes_count?: number
           source?: 'manual' | 'scraper'
           status?: 'active' | 'inactive' | 'pending'
+          category?: string | null
           created_at?: string
           updated_at?: string
         }
