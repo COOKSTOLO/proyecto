@@ -46,6 +46,7 @@ export interface Database {
           id: string
           title: string
           price: number
+          original_price: number | null
           image_url: string
           description: string | null
           affiliate_link: string
@@ -61,6 +62,7 @@ export interface Database {
           id?: string
           title: string
           price: number
+          original_price?: number | null
           image_url: string
           description?: string | null
           affiliate_link: string
@@ -76,6 +78,7 @@ export interface Database {
           id?: string
           title?: string
           price?: number
+          original_price?: number | null
           image_url?: string
           description?: string | null
           affiliate_link?: string

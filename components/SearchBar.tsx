@@ -180,9 +180,16 @@ export default function SearchBar() {
                       <p className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">
                         {offer.title}
                       </p>
-                      <p className="text-xs text-orange-600 dark:text-orange-400 font-semibold">
-                        {formatPrice(offer.price)}
-                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs text-orange-600 dark:text-orange-400 font-semibold">
+                          {formatPrice(offer.price)}
+                        </span>
+                        {offer.original_price && offer.original_price > offer.price && (
+                          <span className="text-xs text-gray-400 dark:text-gray-500 line-through">
+                            {formatPrice(offer.original_price)}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     {/* Arrow hint */}

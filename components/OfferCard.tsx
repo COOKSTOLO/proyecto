@@ -109,9 +109,16 @@ export default function OfferCard({
           <div className="flex items-center justify-between mt-auto">
             <div className="flex items-center gap-4">
               {/* Price */}
-              <span className="text-xl font-bold text-green-600 dark:text-green-400">
-                {formatPrice(offer.price)}
-              </span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-xl font-bold text-green-600 dark:text-green-400">
+                  {formatPrice(offer.price)}
+                </span>
+                {offer.original_price && offer.original_price > offer.price && (
+                  <span className="text-sm text-gray-400 dark:text-gray-500 line-through">
+                    {formatPrice(offer.original_price)}
+                  </span>
+                )}
+              </div>
 
               {/* Like Button */}
               {showActions && onLike && (

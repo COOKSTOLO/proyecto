@@ -20,6 +20,7 @@ export default function CreateOfferPage() {
   const [formData, setFormData] = useState({
     title: '',
     price: '',
+    original_price: '',
     image_url: '',
     description: '',
     affiliate_link: '',
@@ -86,6 +87,7 @@ export default function CreateOfferPage() {
       await createOffer({
         title: formData.title,
         price: parseFloat(formData.price),
+        original_price: formData.original_price ? parseFloat(formData.original_price) : null,
         image_url: finalImageUrl,
         description: formData.description || undefined,
         affiliate_link: formData.affiliate_link,
@@ -185,8 +187,18 @@ export default function CreateOfferPage() {
                     min="0"
                     value={formData.price}
                     onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                    placeholder="0,00 €"
-                    className={`${fieldCls} text-4xl font-bold text-orange-600 dark:text-orange-500 mb-6 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+                    placeholder="$0.00"
+                    className={`${fieldCls} text-4xl font-bold text-orange-600 dark:text-orange-500 mb-2 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+                  />
+                  {/* Original price — optional, shown with strikethrough */}
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.original_price}
+                    onChange={(e) => setFormData({ ...formData, original_price: e.target.value })}
+                    placeholder="Precio antes (opcional)"
+                    className={`${fieldCls} text-lg line-through text-gray-400 dark:text-gray-500 mb-6 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
                   />
 
                   {/* Description — editable */}
@@ -241,7 +253,7 @@ export default function CreateOfferPage() {
                       required
                       value={formData.affiliate_link}
                       onChange={(e) => setFormData({ ...formData, affiliate_link: e.target.value })}
-                      placeholder="Link de afiliado (https://amazon.es/...)"
+                      placeholder="Link"
                       className="block w-full px-6 py-3 bg-orange-600 text-white text-center rounded-lg font-medium placeholder-orange-200 dark:placeholder-orange-300 border-none outline-none focus:ring-2 focus:ring-orange-400"
                     />
 

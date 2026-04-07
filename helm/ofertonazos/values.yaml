@@ -1,0 +1,48 @@
+# Default values for ofertonazos.
+# Override any of these with: helm install ... --set key=value
+
+replicaCount: 2
+
+image:
+  repository: cookstolo/ofertonazos
+  pullPolicy: Always
+  tag: "latest"
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 3000
+
+ingress:
+  enabled: true
+  className: nginx
+  host: ofertonazos.local   # change to real domain in production
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "256Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+# Non-secret runtime environment variables
+env:
+  NODE_ENV: "production"
+  PORT: "3000"
+
+# Secret values — override at deploy time, never commit real values here.
+# Pass via: helm install ... --set secrets.supabaseServiceRoleKey=<value>
+secrets:
+  supabaseServiceRoleKey: "replaceme"
+  apiSecretKey: "replaceme"
+
+livenessProbe:
+  initialDelaySeconds: 20
+  periodSeconds: 30
+
+readinessProbe:
+  initialDelaySeconds: 10
+  periodSeconds: 10

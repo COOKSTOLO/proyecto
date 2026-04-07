@@ -1,12 +1,12 @@
 /**
- * Formatea un precio a formato de moneda española
+ * Formatea un precio a formato de moneda mexicana
  * @param price Precio en número
- * @returns Precio formateado (ej: 29,99 €)
+ * @returns Precio formateado (ej: $29.99)
  */
 export function formatPrice(price: number): string {
-  return new Intl.NumberFormat('es-ES', {
+  return new Intl.NumberFormat('es-MX', {
     style: 'currency',
-    currency: 'EUR',
+    currency: 'MXN',
   }).format(price);
 }
 
@@ -17,7 +17,7 @@ export function formatPrice(price: number): string {
  */
 export function formatPriceCompact(price: number): string {
   if (price >= 1000) {
-    return `${(price / 1000).toFixed(1)}k €`;
+    return `$${(price / 1000).toFixed(1)}k`;
   }
   return formatPrice(price);
 }

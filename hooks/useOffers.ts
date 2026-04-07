@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { Offer, OfferWithUser, CreateOfferDto, OfferCategory } from '@/types/offer';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
-export function useOffers() {
+export function useOffers(sort: 'new' | 'top' = 'new') {
   const [offers, setOffers] = useState<OfferWithUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,18 +26,19 @@ export function useOffers() {
     }
   }, []);
 
-  const fetchOffers = useCallback(async (limit = 20, category?: OfferCategory | null) => {
+  const fetchOffers = useCallback(async (limit = 20, category?: OfferCategory | null, sortBy: 'new' | 'top' = 'new') => {
     setLoading(true);
     setError(null);
     try {
+      const orderCol = sortBy === 'top' ? 'likes_count' : 'created_at';
       const query = supabase
         .from('offers')
         .select(`
-          id, title, price, image_url, description, affiliate_link, user_id, likes_count, source, status, category, created_at, updated_at,
+          id, title, price, original_price, image_url, description, affiliate_link, user_id, likes_count, source, status, category, created_at, updated_at,
           user:profiles!user_id(name, avatar_url)
         `)
         .eq('status', 'active')
-        .order('created_at', { ascending: false })
+        .order(orderCol, { ascending: false })
         .limit(limit);
 
       const { data, error } = category
@@ -86,8 +87,8 @@ export function useOffers() {
   }, []);
 
   useEffect(() => {
-    fetchOffers(20);
-  }, [fetchOffers]);
+    fetchOffers(20, undefined, sort);
+  }, [fetchOffers, sort]);
 
   // Tambien refrescar liked IDs si cambia la sesión
   useEffect(() => {

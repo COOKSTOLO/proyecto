@@ -123,8 +123,15 @@ export default function OfferDetailClient({ offer }: OfferDetailClientProps) {
               {offer.title}
             </h1>
 
-            <div className="text-4xl font-bold text-orange-600 dark:text-orange-500 mb-6">
-              {formatPrice(offer.price)}
+            <div className="flex items-baseline gap-3 mb-6">
+              <span className="text-4xl font-bold text-orange-600 dark:text-orange-500">
+                {formatPrice(offer.price)}
+              </span>
+              {offer.original_price && offer.original_price > offer.price && (
+                <span className="text-xl text-gray-400 dark:text-gray-500 line-through">
+                  {formatPrice(offer.original_price)}
+                </span>
+              )}
             </div>
 
             {offer.description && (

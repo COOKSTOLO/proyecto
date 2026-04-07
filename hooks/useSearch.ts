@@ -36,7 +36,7 @@ export function useSearch() {
       const { data, error: sbError } = await supabase
         .from('offers')
         .select(`
-          id, title, price, image_url, description, affiliate_link,
+          id, title, price, original_price, image_url, description, affiliate_link,
           likes_count, category, created_at,
           user:profiles!user_id(name, avatar_url)
         `)

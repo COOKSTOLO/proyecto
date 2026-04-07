@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useOffers } from '@/hooks/useOffers';
 import OfferCard from '@/components/OfferCard';
 import Loading from '@/components/Loading';
@@ -11,8 +13,10 @@ const ALL_CATEGORIES = [
   ...OFFER_CATEGORIES.map((c) => ({ value: c.value as OfferCategory | null, label: c.label, emoji: c.emoji })),
 ];
 
-export default function HomePage() {
-  const { offers, loading, toggleLike, likedOfferIds } = useOffers();
+function HomePageContent() {
+  const searchParams = useSearchParams();
+  const sort = (searchParams?.get('sort') as 'new' | 'top') === 'top' ? 'top' : 'new';
+  const { offers, loading, toggleLike, likedOfferIds } = useOffers(sort);
   const [selectedCategory, setSelectedCategory] = useState<OfferCategory | null>(null);
 
   const filteredOffers = selectedCategory
@@ -26,25 +30,52 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-300 flex flex-col">
 
-      {/* Barra de categorías — sticky justo bajo la navbar */}
+      {/* Barra de 2 filas: categorías arriba, sort abajo */}
       <div className="sticky top-16 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-2 flex gap-1.5 justify-between">
-          {ALL_CATEGORIES.map((cat) => (
-            <button
-              key={String(cat.value)}
-              onClick={() => setSelectedCategory(cat.value)}
-              title={cat.label}
-              className={`flex-1 flex flex-col items-center gap-0.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                selectedCategory === cat.value
-                  ? 'bg-orange-600 text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-orange-100 dark:hover:bg-orange-900/40 hover:text-orange-600 dark:hover:text-orange-400'
-              }`}
-            >
-              <span className="text-base leading-none">{cat.emoji}</span>
-              <span className="hidden sm:block truncate w-full text-center text-[10px] leading-tight px-0.5">{cat.label}</span>
-            </button>
-          ))}
+
+        {/* Fila 1: Categorías como texto */}
+        <div className="border-b border-gray-100 dark:border-gray-700">
+          <div className="max-w-4xl mx-auto px-4 flex overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+            {ALL_CATEGORIES.map((cat) => (
+              <button
+                key={String(cat.value)}
+                onClick={() => setSelectedCategory(cat.value)}
+                className={`shrink-0 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                  selectedCategory === cat.value
+                    ? 'border-orange-500 text-orange-600 dark:text-orange-400'
+                    : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-orange-500 dark:hover:text-orange-400 hover:border-orange-300'
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
         </div>
+
+        {/* Fila 2: Sort */}
+        <div className="max-w-4xl mx-auto px-4 flex gap-0">
+          <Link
+            href="/?sort=new"
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              sort === 'new'
+                ? 'border-orange-500 text-orange-600 dark:text-orange-400'
+                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-orange-500 dark:hover:text-orange-400 hover:border-orange-300'
+            }`}
+          >
+            Nuevo
+          </Link>
+          <Link
+            href="/?sort=top"
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              sort === 'top'
+                ? 'border-orange-500 text-orange-600 dark:text-orange-400'
+                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-orange-500 dark:hover:text-orange-400 hover:border-orange-300'
+            }`}
+          >
+            Más Buscadas
+          </Link>
+        </div>
+
       </div>
 
       {/* Container with subtle side shadows */}
@@ -56,8 +87,12 @@ export default function HomePage() {
         <div className="flex-1 max-w-4xl py-6 px-4 bg-white/30 dark:bg-gray-800/30">
           {/* Header */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-4 transition-colors duration-300">
-            <h1 className="text-xl font-bold text-gray-800 dark:text-white">🔥 Ofertas Recientes</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Las mejores ofertas encontradas para ti</p>
+            <h1 className="text-xl font-bold text-gray-800 dark:text-white">
+              {sort === 'top' ? '🏆 Más Buscadas' : '🔥 Ofertas Recientes'}
+            </h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {sort === 'top' ? 'Las ofertas con más likes de la comunidad' : 'Las mejores ofertas encontradas para ti'}
+            </p>
           </div>
 
           {/* Offers List */}
@@ -114,5 +149,13 @@ export default function HomePage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <HomePageContent />
+    </Suspense>
   );
 }
