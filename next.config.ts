@@ -10,6 +10,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  eslint: {
+    dirs: ['app', 'components', 'lib', 'hooks', 'context', 'pages', 'utils', 'types']
+  },
 };
 
 export default nextConfig;
