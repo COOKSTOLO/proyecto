@@ -58,7 +58,7 @@ export default function OfferDetailClient({ offer }: OfferDetailClientProps) {
     if (!user || !newComment.trim()) return;
 
     setSubmitting(true);
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('comments')
       .insert({ offer_id: offer.id, user_id: user.id, content: newComment.trim() })
       .select('id, content, created_at, user_id, user:profiles(name, avatar_url)')

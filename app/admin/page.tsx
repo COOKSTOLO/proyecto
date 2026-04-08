@@ -20,7 +20,14 @@ export default function AdminPage() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabaseAdmin
+      
+      if (!supabaseAdmin) {
+        setError('Admin client not configured');
+        return;
+      }
+      
+      const client = supabaseAdmin;
+      const { data, error } = await client
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
@@ -39,8 +46,14 @@ export default function AdminPage() {
   };
 
   const toggleSubscription = async (userId: string, currentStatus: boolean) => {
+    if (!supabaseAdmin) {
+      console.error('Admin client not configured');
+      return;
+    }
+    
+    const client = supabaseAdmin;
     try {
-      await supabaseAdmin
+      await (client as any)
         .from('profiles')
         .update({ subscription_active: !currentStatus })
         .eq('id', userId);
@@ -52,9 +65,15 @@ export default function AdminPage() {
   };
 
   const toggleAdmin = async (userId: string, currentRole: string) => {
+    if (!supabaseAdmin) {
+      console.error('Admin client not configured');
+      return;
+    }
+    
+    const client = supabaseAdmin;
     try {
       const newRole = currentRole === 'admin' ? 'user' : 'admin';
-      await supabaseAdmin
+      await (client as any)
         .from('profiles')
         .update({ role: newRole })
         .eq('id', userId);
