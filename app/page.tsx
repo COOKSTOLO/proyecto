@@ -68,11 +68,11 @@ function HomePageContent() {
             href="/?sort=top"
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               sort === 'top'
-                ? 'border-orange-500 text-orange-602 dark:text-orange-400'
+                ? 'border-orange-500 text-orange-600 dark:text-orange-400'
                 : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-orange-500 dark:hover:text-orange-400 hover:border-orange-300'
             }`}
           >
-            Más buscadaaasaaaaaaaaaassss
+            Más buscadas
           </Link>
         </div>
 
@@ -143,7 +143,7 @@ function HomePageContent() {
           
           <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 text-center">
             <p className="text-xs text-gray-400 dark:text-gray-500">
-              © 2026 Ofertonazos. Todos los derechos reservadosssss
+              © 2026 Ofertonazos. Todos los derechos reservados
             </p>
           </div>
         </div>
