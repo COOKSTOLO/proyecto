@@ -61,14 +61,7 @@ jobs:
   docker:
     name: Docker Build & Push
     runs-on: ubuntu-latest
-    needs: build    # Ver tus imágenes locales
-    docker images
-    
-    # Login a Docker Hub
-    docker login -u 452323habid
-    
-    # Ver la imagen remota (después del CI)
-    start https://hub.docker.com/r/452323habid/ofertonazos
+    needs: build
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
       - name: Checkout code
