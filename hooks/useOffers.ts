@@ -147,7 +147,7 @@ export function useOffers(sort: 'new' | 'top' = 'new') {
 
     const isLiked = likedOfferIds.has(offerId);
 
-    // Optimistic update: respuesta inmediata en la UI
+    // Optimistic update: respuesta inmediata en la UIaaaaaaaaaaaaaaaaaaaaaaaaaaadawdawdaawwdawdaw
     setOffers((prev) =>
       prev.map((o) =>
         o.id === offerId

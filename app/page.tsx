@@ -72,7 +72,7 @@ function HomePageContent() {
                 : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-orange-500 dark:hover:text-orange-400 hover:border-orange-300'
             }`}
           >
-            Más buscadaaas
+            Más buscadaaasaaaaaaaaaassss
           </Link>
         </div>
 
@@ -143,7 +143,7 @@ function HomePageContent() {
           
           <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 text-center">
             <p className="text-xs text-gray-400 dark:text-gray-500">
-              © 2026 Ofertonazos. Todos los derechos reservados.
+              © 2026 Ofertonazos. Todos los derechos reservadosssss
             </p>
           </div>
         </div>
