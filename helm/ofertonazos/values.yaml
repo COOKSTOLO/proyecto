@@ -4,7 +4,7 @@
 replicaCount: 2
 
 image:
-  repository: cookstolo/ofertonazos
+  repository: 452323habid/ofertonazos
   pullPolicy: Always
   tag: "latest"
 

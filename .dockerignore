@@ -40,3 +40,5 @@ coverage
 __tests__
 *.test.ts
 *.spec.ts
+minikube status
+kubectl get nodes
