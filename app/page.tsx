@@ -68,11 +68,11 @@ function HomePageContent() {
             href="/?sort=top"
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               sort === 'top'
-                ? 'border-orange-500 text-orange-600 dark:text-orange-400'
+                ? 'border-orange-500 text-orange-602 dark:text-orange-400'
                 : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-orange-500 dark:hover:text-orange-400 hover:border-orange-300'
             }`}
           >
-            Más Buscadas
+            Más buscadaaas
           </Link>
         </div>
 
