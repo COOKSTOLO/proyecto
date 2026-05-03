@@ -1,6 +1,12 @@
 apiVersion: v2
 name: ofertonazos
-description: Helm chart for the Ofertonazos Next.js application
+description: Helm chart for the Ofertonazos Next.js application – deals aggregator platform
 type: application
-version: 0.1.0
+version: 0.2.0
 appVersion: "latest"
+keywords:
+  - ofertonazos
+  - nextjs
+  - deals
+maintainers:
+  - name: ofertonazos-team

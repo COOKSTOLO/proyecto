@@ -1,0 +1,13 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ofertonazos
+  labels:
+    app: ofertonazos
+spec:
+  # At least 1 pod must be available during voluntary disruptions
+  # (node drains, rolling upgrades, etc.)
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: ofertonazos

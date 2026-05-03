@@ -1,0 +1,113 @@
+name: CD – Deploy to Azure AKS
+
+# Triggers after CI succeeds on the main branch (push or merged PR)
+on:
+  workflow_run:
+    workflows: ["CI – Lint, Build & Push"]
+    types: [completed]
+    branches: [main]
+  # Allow manual deploy with a custom image tag
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Docker image tag to deploy (default: sha-<commit>)"
+        required: false
+        default: "latest"
+
+env:
+  # ── Azure & AKS ───────────────────────────────────────────────────────────────
+  AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+  AKS_CLUSTER_NAME: ${{ secrets.AKS_CLUSTER_NAME }}
+  # ── Docker Hub ────────────────────────────────────────────────────────────────
+  IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/ofertonazos
+  # ── Helm release ──────────────────────────────────────────────────────────────
+  HELM_RELEASE: ofertonazos
+  HELM_NAMESPACE: default
+  HELM_CHART: ./helm/ofertonazos
+
+jobs:
+  # ─── Guard: only run when upstream CI passed ─────────────────────────────────
+  check-ci:
+    name: Check CI status
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    steps:
+      - name: CI passed – proceeding with deployment
+        run: echo "CI workflow passed. Deploying..."
+
+  # ─── Deploy to AKS ───────────────────────────────────────────────────────────
+  deploy:
+    name: Helm Deploy to AKS
+    runs-on: ubuntu-latest
+    needs: check-ci
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ── Determine image tag ──────────────────────────────────────────────────
+      - name: Set image tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ github.event.inputs.image_tag }}"
+          else
+            SHA="${{ github.event.workflow_run.head_sha }}"
+            TAG="sha-${SHA::7}"
+          fi
+          echo "IMAGE_TAG=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "Deploying image tag: ${TAG}"
+
+      # ── Azure login ──────────────────────────────────────────────────────────
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # ── Get AKS kubeconfig ───────────────────────────────────────────────────
+      - name: Get AKS credentials
+        uses: azure/aks-set-context@v4
+        with:
+          resource-group: ${{ env.AZURE_RESOURCE_GROUP }}
+          cluster-name: ${{ env.AKS_CLUSTER_NAME }}
+
+      # ── Install Helm ─────────────────────────────────────────────────────────
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+
+      # ── Helm upgrade / install ───────────────────────────────────────────────
+      - name: Helm upgrade --install
+        run: |
+          helm upgrade --install "${{ env.HELM_RELEASE }}" "${{ env.HELM_CHART }}" \
+            --namespace "${{ env.HELM_NAMESPACE }}" \
+            --create-namespace \
+            --atomic \
+            --timeout 5m \
+            --set image.tag="${{ steps.tag.outputs.IMAGE_TAG }}" \
+            --set secrets.supabaseServiceRoleKey="${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            --set secrets.apiSecretKey="${{ secrets.API_SECRET_KEY }}" \
+            --set ingress.host="${{ secrets.PRODUCTION_HOST }}"
+
+      # ── Verify rollout ───────────────────────────────────────────────────────
+      - name: Verify deployment rollout
+        run: |
+          kubectl rollout status deployment/${{ env.HELM_RELEASE }} \
+            --namespace ${{ env.HELM_NAMESPACE }} \
+            --timeout=3m
+
+      # ── Print summary ────────────────────────────────────────────────────────
+      - name: Deployment summary
+        run: |
+          echo "### Deployment Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Key | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|-----|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Release | ${{ env.HELM_RELEASE }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Namespace | ${{ env.HELM_NAMESPACE }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Image Tag | ${{ steps.tag.outputs.IMAGE_TAG }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Cluster | ${{ env.AKS_CLUSTER_NAME }} |" >> "$GITHUB_STEP_SUMMARY"
+          kubectl get pods -n ${{ env.HELM_NAMESPACE }} -l app.kubernetes.io/name=ofertonazos

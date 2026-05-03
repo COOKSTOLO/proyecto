@@ -13,6 +13,10 @@ spec:
     metadata:
       labels:
         {{- include "ofertonazos.selectorLabels" . | nindent 8 }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.service.targetPort }}"
+        prometheus.io/path: "/api/metrics"
     spec:
       containers:
         - name: {{ .Chart.Name }}
@@ -29,13 +33,22 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           livenessProbe:
             httpGet:
-              path: /
+              path: /api/health
               port: {{ .Values.service.targetPort }}
             initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /
+              path: /api/health
               port: {{ .Values.service.targetPort }}
             initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: {{ .Values.service.targetPort }}
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 12

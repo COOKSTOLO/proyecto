@@ -1,0 +1,184 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-ofertonazos
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  ofertonazos.json: |
+    {
+      "title": "Ofertonazos – Application Overview",
+      "uid": "ofertonazos-overview",
+      "schemaVersion": 36,
+      "version": 1,
+      "refresh": "30s",
+      "time": { "from": "now-1h", "to": "now" },
+      "panels": [
+        {
+          "id": 1,
+          "type": "stat",
+          "title": "App Uptime (seconds)",
+          "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+          "targets": [
+            {
+              "expr": "max(process_uptime_seconds{job=\"ofertonazos\"})",
+              "legendFormat": "Uptime"
+            }
+          ],
+          "options": { "colorMode": "value", "graphMode": "none" },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "color": { "mode": "thresholds" },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "red", "value": null },
+                  { "color": "yellow", "value": 60 },
+                  { "color": "green", "value": 300 }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 2,
+          "type": "stat",
+          "title": "Heap Memory Used (MB)",
+          "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
+          "targets": [
+            {
+              "expr": "avg(process_heap_bytes_used{job=\"ofertonazos\"}) / 1024 / 1024",
+              "legendFormat": "Heap Used MB"
+            }
+          ],
+          "options": { "colorMode": "background" },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "decmbytes",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 200 },
+                  { "color": "red", "value": 350 }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 3,
+          "type": "stat",
+          "title": "RSS Memory (MB)",
+          "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
+          "targets": [
+            {
+              "expr": "avg(process_resident_memory_bytes{job=\"ofertonazos\"}) / 1024 / 1024",
+              "legendFormat": "RSS MB"
+            }
+          ],
+          "options": { "colorMode": "background" },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "decmbytes",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 300 },
+                  { "color": "red", "value": 400 }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 4,
+          "type": "stat",
+          "title": "Pods Up",
+          "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 },
+          "targets": [
+            {
+              "expr": "count(up{job=\"ofertonazos\"} == 1)",
+              "legendFormat": "Healthy Pods"
+            }
+          ],
+          "options": { "colorMode": "value" },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "red", "value": null },
+                  { "color": "yellow", "value": 1 },
+                  { "color": "green", "value": 2 }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 5,
+          "type": "timeseries",
+          "title": "Heap Memory Over Time",
+          "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+          "targets": [
+            {
+              "expr": "process_heap_bytes_used{job=\"ofertonazos\"} / 1024 / 1024",
+              "legendFormat": "{{pod}} – Heap Used"
+            },
+            {
+              "expr": "process_heap_bytes_total{job=\"ofertonazos\"} / 1024 / 1024",
+              "legendFormat": "{{pod}} – Heap Total"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "decmbytes" } }
+        },
+        {
+          "id": 6,
+          "type": "timeseries",
+          "title": "RSS Memory Over Time",
+          "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
+          "targets": [
+            {
+              "expr": "process_resident_memory_bytes{job=\"ofertonazos\"} / 1024 / 1024",
+              "legendFormat": "{{pod}} – RSS"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "decmbytes" } }
+        },
+        {
+          "id": 7,
+          "type": "timeseries",
+          "title": "Container CPU Usage (cores)",
+          "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 },
+          "targets": [
+            {
+              "expr": "rate(container_cpu_usage_seconds_total{namespace=\"default\", pod=~\"ofertonazos.*\", container=\"ofertonazos\"}[2m])",
+              "legendFormat": "{{pod}}"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" } }
+        },
+        {
+          "id": 8,
+          "type": "timeseries",
+          "title": "Container Network I/O",
+          "gridPos": { "x": 12, "y": 12, "w": 12, "h": 8 },
+          "targets": [
+            {
+              "expr": "rate(container_network_receive_bytes_total{namespace=\"default\", pod=~\"ofertonazos.*\"}[2m])",
+              "legendFormat": "{{pod}} – Rx"
+            },
+            {
+              "expr": "rate(container_network_transmit_bytes_total{namespace=\"default\", pod=~\"ofertonazos.*\"}[2m])",
+              "legendFormat": "{{pod}} – Tx"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "Bps" } }
+        }
+      ]
+    }

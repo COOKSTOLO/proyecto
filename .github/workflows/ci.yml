@@ -33,7 +33,30 @@ jobs:
       - name: TypeScript type-check
         run: npx tsc --noEmit
 
-  # ─── Job 2: Build Next.js ────────────────────────────────────────────────────
+  # ─── Job 2: Helm lint ────────────────────────────────────────────────────────
+  helm-lint:
+    name: Helm Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+
+      - name: Helm lint
+        run: helm lint ./helm/ofertonazos --strict
+
+      - name: Helm template (dry-run)
+        run: |
+          helm template ofertonazos ./helm/ofertonazos \
+            --set secrets.supabaseServiceRoleKey=dryrun \
+            --set secrets.apiSecretKey=dryrun \
+            > /dev/null
+
+  # ─── Job 3: Build Next.js ────────────────────────────────────────────────────
   build:
     name: Next.js Build
     runs-on: ubuntu-latest
@@ -57,7 +80,7 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
-  # ─── Job 3: Docker build & push (main branch only) ───────────────────────────
+  # ─── Job 4: Docker build & push (main branch only) ───────────────────────────
   docker:
     name: Docker Build & Push
     runs-on: ubuntu-latest
@@ -97,3 +120,19 @@ jobs:
             NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # ── Security scan with Trivy ──────────────────────────────────────────────
+      - name: Run Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "${{ env.IMAGE_NAME }}:latest"
+          format: "sarif"
+          output: "trivy-results.sarif"
+          severity: "CRITICAL,HIGH"
+          exit-code: "0"   # set to 1 to fail on critical vulns
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif

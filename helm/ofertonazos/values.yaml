@@ -46,3 +46,27 @@ livenessProbe:
 readinessProbe:
   initialDelaySeconds: 10
   periodSeconds: 10
+
+# ── Horizontal Pod Autoscaler ─────────────────────────────────────────────────
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 8
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# ── Pod Disruption Budget ─────────────────────────────────────────────────────
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# ── Prometheus / Grafana monitoring ─────────────────────────────────────────
+monitoring:
+  serviceMonitor:
+    # Set to true when kube-prometheus-stack (Prometheus Operator) is installed
+    enabled: false
+    interval: "15s"
+    scrapeTimeout: "10s"
+    # Labels added to the ServiceMonitor so Prometheus Operator picks it up
+    additionalLabels:
+      release: kube-prometheus-stack

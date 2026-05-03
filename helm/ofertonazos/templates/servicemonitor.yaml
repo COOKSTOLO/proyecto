@@ -1,0 +1,28 @@
+{{/*
+  ServiceMonitor is a Prometheus Operator CRD.
+  It tells Prometheus how to scrape the Ofertonazos service.
+  Requires the kube-prometheus-stack (or prometheus-operator) to be installed.
+*/}}
+{{- if .Values.monitoring.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "ofertonazos.fullname" . }}
+  labels:
+    {{- include "ofertonazos.labels" . | nindent 4 }}
+    {{- with .Values.monitoring.serviceMonitor.additionalLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "ofertonazos.selectorLabels" . | nindent 6 }}
+  endpoints:
+    - port: http
+      path: /api/metrics
+      interval: {{ .Values.monitoring.serviceMonitor.interval }}
+      scrapeTimeout: {{ .Values.monitoring.serviceMonitor.scrapeTimeout }}
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+{{- end }}
