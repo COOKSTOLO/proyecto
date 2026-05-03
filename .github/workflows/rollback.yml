@@ -1,0 +1,60 @@
+name: Rollback – AKS
+
+on:
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: "Helm revision to rollback to (leave blank for previous)"
+        required: false
+        default: ""
+
+jobs:
+  rollback:
+    name: Helm Rollback
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Get AKS credentials
+        uses: azure/aks-set-context@v4
+        with:
+          resource-group: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          cluster-name: ${{ secrets.AKS_CLUSTER_NAME }}
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+
+      - name: Show Helm history before rollback
+        run: helm history ofertonazos --namespace default
+
+      - name: Helm rollback
+        run: |
+          if [ -n "${{ github.event.inputs.revision }}" ]; then
+            helm rollback ofertonazos ${{ github.event.inputs.revision }} \
+              --namespace default --wait --timeout 3m
+          else
+            helm rollback ofertonazos \
+              --namespace default --wait --timeout 3m
+          fi
+
+      - name: Verify pods after rollback
+        run: |
+          kubectl rollout status deployment/ofertonazos \
+            --namespace default --timeout=3m
+          kubectl get pods -n default -l app.kubernetes.io/name=ofertonazos
+
+      - name: Rollback summary
+        run: |
+          echo "### Rollback Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Key | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|-----|-------|" >> "$GITHUB_STEP_SUMMARY"
+          CURRENT=$(helm history ofertonazos --namespace default --max 1 -o json | jq -r '.[0].revision')
+          echo "| Current revision | ${CURRENT} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Cluster | ${{ secrets.AKS_CLUSTER_NAME }} |" >> "$GITHUB_STEP_SUMMARY"

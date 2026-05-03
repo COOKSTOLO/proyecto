@@ -5,7 +5,7 @@ metadata:
   labels:
     app: ofertonazos
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: ofertonazos
@@ -20,15 +20,27 @@ spec:
     spec:
       containers:
         - name: ofertonazos
-          image: 452323habid/ofertonazos:latest
-          imagePullPolicy: Always
+          image: ofertonazos:local
+          imagePullPolicy: Never
           ports:
             - containerPort: 3000
-          envFrom:
-            - configMapRef:
-                name: ofertonazos-config
-            - secretRef:
-                name: ofertonazos-secrets
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: PORT
+              value: "3000"
+            - name: HOSTNAME
+              value: "0.0.0.0"
+            - name: NEXT_PUBLIC_SUPABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: ofertonazos-secrets
+                  key: NEXT_PUBLIC_SUPABASE_URL
+            - name: NEXT_PUBLIC_SUPABASE_ANON_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ofertonazos-secrets
+                  key: NEXT_PUBLIC_SUPABASE_ANON_KEY
           resources:
             requests:
               cpu: "100m"
@@ -40,20 +52,13 @@ spec:
             httpGet:
               path: /api/health
               port: 3000
-            initialDelaySeconds: 20
+            initialDelaySeconds: 30
             periodSeconds: 30
             failureThreshold: 3
           readinessProbe:
             httpGet:
               path: /api/health
               port: 3000
-            initialDelaySeconds: 10
+            initialDelaySeconds: 15
             periodSeconds: 10
             failureThreshold: 3
-          startupProbe:
-            httpGet:
-              path: /api/health
-              port: 3000
-            initialDelaySeconds: 5
-            periodSeconds: 5
-            failureThreshold: 12
